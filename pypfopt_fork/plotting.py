@@ -192,7 +192,7 @@ def _plot_ef(ef, ef_param, ef_param_range, ax, show_assets):
         mus.append(ret)
         sigmas.append(sigma)
 
-    ax.plot(sigmas, mus, label="Efficient frontier")
+    ax.plot(sigmas, mus, label="Granica efektywna")
 
     if show_assets:
         ax.scatter(
