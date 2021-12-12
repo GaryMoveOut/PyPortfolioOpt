@@ -8,8 +8,8 @@ import matplotlib.pyplot as plt
 import pytest
 
 from tests.utilities_for_tests import get_data, setup_efficient_frontier
-from pypfopt import plotting, risk_models, expected_returns
-from pypfopt import HRPOpt, CLA, EfficientFrontier
+from pypfopt_fork import plotting, risk_models, expected_returns
+from pypfopt_fork import HRPOpt, CLA, EfficientFrontier
 
 
 def test_correlation_plot():

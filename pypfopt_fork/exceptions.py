@@ -20,7 +20,7 @@ class OptimizationError(Exception):
 
 class InstantiationError(Exception):
     """
-    Errors related to the instantiation of pypfopt objects, e.g adding constraints to an
+    Errors related to the instantiation of pypfopt_fork objects, e.g adding constraints to an
     already-solved problem
     """
 

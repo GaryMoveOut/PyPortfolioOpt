@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import pytest
-from pypfopt import risk_models, expected_returns
+from pypfopt_fork import risk_models, expected_returns
 from tests.utilities_for_tests import get_data
 
 

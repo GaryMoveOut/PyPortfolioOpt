@@ -1,16 +1,16 @@
 import pandas as pd
 import numpy as np
 import cvxpy as cp
-from pypfopt import risk_models
-from pypfopt import expected_returns
-from pypfopt import EfficientFrontier
-from pypfopt import objective_functions
-from pypfopt.discrete_allocation import DiscreteAllocation, get_latest_prices
-from pypfopt import HRPOpt
-from pypfopt import CLA
-from pypfopt import black_litterman
-from pypfopt import BlackLittermanModel
-from pypfopt import plotting
+from pypfopt_fork import risk_models
+from pypfopt_fork import expected_returns
+from pypfopt_fork import EfficientFrontier
+from pypfopt_fork import objective_functions
+from pypfopt_fork.discrete_allocation import DiscreteAllocation, get_latest_prices
+from pypfopt_fork import HRPOpt
+from pypfopt_fork import CLA
+from pypfopt_fork import black_litterman
+from pypfopt_fork import BlackLittermanModel
+from pypfopt_fork import plotting
 
 
 # Reading in the data; preparing expected returns and a risk model

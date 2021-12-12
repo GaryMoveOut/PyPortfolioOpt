@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
-from pypfopt.expected_returns import mean_historical_return, returns_from_prices
-from pypfopt import objective_functions
-from pypfopt.risk_models import sample_cov
+from pypfopt_fork.expected_returns import mean_historical_return, returns_from_prices
+from pypfopt_fork import objective_functions
+from pypfopt_fork.risk_models import sample_cov
 from tests.utilities_for_tests import get_data
 
 

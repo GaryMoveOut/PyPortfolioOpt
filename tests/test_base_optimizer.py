@@ -7,9 +7,9 @@ import pandas as pd
 import pytest
 import cvxpy as cp
 
-from pypfopt import EfficientFrontier, objective_functions
-from pypfopt import exceptions
-from pypfopt.base_optimizer import portfolio_performance, BaseOptimizer
+from pypfopt_fork import EfficientFrontier, objective_functions
+from pypfopt_fork import exceptions
+from pypfopt_fork.base_optimizer import portfolio_performance, BaseOptimizer
 from tests.utilities_for_tests import get_data, setup_efficient_frontier
 
 

@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 from tests.utilities_for_tests import get_data, setup_cla
-from pypfopt import risk_models
-from pypfopt.cla import CLA
+from pypfopt_fork import risk_models
+from pypfopt_fork.cla import CLA
 
 
 def test_portfolio_performance():

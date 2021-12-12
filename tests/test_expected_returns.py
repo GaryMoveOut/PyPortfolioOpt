@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import pytest
-from pypfopt import expected_returns
+from pypfopt_fork import expected_returns
 from tests.utilities_for_tests import get_data, get_benchmark_data
 
 

@@ -5,7 +5,7 @@ import cvxpy as cp
 import pytest
 import scipy.optimize as sco
 
-from pypfopt import (
+from pypfopt_fork import (
     EfficientFrontier,
     expected_returns,
     risk_models,

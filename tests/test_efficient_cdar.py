@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
-from pypfopt import (
+from pypfopt_fork import (
     risk_models,
     expected_returns,
     EfficientCDaR,
@@ -11,7 +11,7 @@ from tests.utilities_for_tests import (
     setup_efficient_cdar,
     get_data,
 )
-from pypfopt.exceptions import OptimizationError
+from pypfopt_fork.exceptions import OptimizationError
 
 
 def test_cdar_example():

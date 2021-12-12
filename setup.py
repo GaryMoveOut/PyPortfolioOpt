@@ -17,7 +17,7 @@ setup(
     author="Robert Andrew Martin",
     author_email="martin.robertandrew@gmail.com",
     license="MIT",
-    packages=["pypfopt"],
+    packages=["pypfopt_fork"],
     classifiers=[
         "Development Status :: 4 - Beta",
         "Environment :: Console",

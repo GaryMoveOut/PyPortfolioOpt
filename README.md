@@ -97,17 +97,17 @@ PyPortfolioOpt supports Docker. Build your first container with `docker build -f
 
 ```bash
 # iPython interpreter:
-docker run -it pypfopt poetry run ipython
+docker run -it pypfopt_fork poetry run ipython
 
 # Jupyter notebook server:
-docker run -it -p 8888:8888 pypfopt poetry run jupyter notebook --allow-root --no-browser --ip 0.0.0.0
+docker run -it -p 8888:8888 pypfopt_fork poetry run jupyter notebook --allow-root --no-browser --ip 0.0.0.0
 # click on http://127.0.0.1:8888/?token=xxx
 
 # Pytest
-docker run -t pypfopt poetry run pytest
+docker run -t pypfopt_fork poetry run pytest
 
 # Bash
-docker run -it pypfopt bash
+docker run -it pypfopt_fork bash
 ```
 
 For more information, please read [this guide](https://docker-curriculum.com/#introduction).
@@ -132,9 +132,9 @@ Here is an example on real life stock data, demonstrating how easy it is to find
 
 ```python
 import pandas as pd
-from pypfopt import EfficientFrontier
-from pypfopt import risk_models
-from pypfopt import expected_returns
+from pypfopt_fork import EfficientFrontier
+from pypfopt_fork import risk_models
+from pypfopt_fork import expected_returns
 
 # Read in price data
 df = pd.read_csv("tests/resources/stock_prices.csv", parse_dates=True, index_col="date")
@@ -184,7 +184,7 @@ Sharpe Ratio: 1.28
 This is interesting but not useful in itself. However, PyPortfolioOpt provides a method which allows you to convert the above continuous weights to an actual allocation that you could buy. Just enter the most recent prices, and the desired portfolio size ($10,000 in this example):
 
 ```python
-from pypfopt.discrete_allocation import DiscreteAllocation, get_latest_prices
+from pypfopt_fork.discrete_allocation import DiscreteAllocation, get_latest_prices
 
 
 latest_prices = get_latest_prices(df)

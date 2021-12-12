@@ -1,10 +1,10 @@
 import numpy as np
 import pandas as pd
 import pytest
-from pypfopt.discrete_allocation import get_latest_prices, DiscreteAllocation
-from pypfopt.efficient_frontier import EfficientFrontier
-from pypfopt.expected_returns import mean_historical_return
-from pypfopt.risk_models import sample_cov
+from pypfopt_fork.discrete_allocation import get_latest_prices, DiscreteAllocation
+from pypfopt_fork.efficient_frontier import EfficientFrontier
+from pypfopt_fork.expected_returns import mean_historical_return
+from pypfopt_fork.risk_models import sample_cov
 from tests.utilities_for_tests import get_data
 
 

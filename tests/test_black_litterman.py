@@ -2,9 +2,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from pypfopt import black_litterman
-from pypfopt.black_litterman import BlackLittermanModel
-from pypfopt import risk_models, expected_returns
+from pypfopt_fork import black_litterman
+from pypfopt_fork.black_litterman import BlackLittermanModel
+from pypfopt_fork import risk_models, expected_returns
 from tests.utilities_for_tests import get_data, get_market_caps, resource
 
 

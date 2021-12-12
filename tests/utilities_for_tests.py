@@ -2,16 +2,16 @@ import os
 
 import numpy as np
 import pandas as pd
-from pypfopt import expected_returns
-from pypfopt import risk_models
-from pypfopt.efficient_frontier import (
+from pypfopt_fork import expected_returns
+from pypfopt_fork import risk_models
+from pypfopt_fork.efficient_frontier import (
     EfficientFrontier,
     EfficientSemivariance,
     EfficientCVaR,
     EfficientCDaR,
 )
-from pypfopt.cla import CLA
-from pypfopt.expected_returns import returns_from_prices
+from pypfopt_fork.cla import CLA
+from pypfopt_fork.expected_returns import returns_from_prices
 
 
 def resource(name):
