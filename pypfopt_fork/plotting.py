@@ -141,7 +141,7 @@ def _plot_cla(cla, points, ax, show_assets):
             cla.expected_returns,
             s=30,
             color="k",
-            label="assets",
+            label="Indeksy",
         )
     return ax
 
@@ -201,7 +201,7 @@ def _plot_ef(ef, ef_param, ef_param_range, ax, show_assets):
             ef.expected_returns,
             s=30,
             color="k",
-            label="assets",
+            label="Indeksy",
         )
     return ax
 
