@@ -4,17 +4,19 @@ classical mean-variance optimal portfolios for a variety of objectives and const
 """
 import copy
 import warnings
+from datetime import datetime
 
 import numpy as np
 import pandas as pd
 import cvxpy as cp
 
+from .genetic_max_sharpe_utils import generate_new_population, compute_sharpe_ratio, compute_standard_deviation, \
+    compute_portfolio_returns
 from .. import exceptions
 from .. import objective_functions, base_optimizer
 
 
 class EfficientFrontier(base_optimizer.BaseConvexOptimizer):
-
     """
     An EfficientFrontier object (inheriting from BaseConvexOptimizer) contains multiple
     optimization methods that can be called (corresponding to different objective
@@ -55,13 +57,13 @@ class EfficientFrontier(base_optimizer.BaseConvexOptimizer):
     """
 
     def __init__(
-        self,
-        expected_returns,
-        cov_matrix,
-        weight_bounds=(0, 1),
-        solver=None,
-        verbose=False,
-        solver_options=None,
+            self,
+            expected_returns,
+            cov_matrix,
+            weight_bounds=(0, 1),
+            solver=None,
+            verbose=False,
+            solver_options=None,
     ):
         """
         :param expected_returns: expected returns for each asset. Can be None if
@@ -266,7 +268,7 @@ class EfficientFrontier(base_optimizer.BaseConvexOptimizer):
             if isinstance(constr, cp.constraints.nonpos.Inequality):
                 # Either the first or second item is the expression
                 if isinstance(
-                    constr.args[0], cp.expressions.constants.constant.Constant
+                        constr.args[0], cp.expressions.constants.constant.Constant
                 ):
                     new_constraints.append(constr.args[1] >= constr.args[0] * k)
                 else:
@@ -280,14 +282,46 @@ class EfficientFrontier(base_optimizer.BaseConvexOptimizer):
 
         # Transformed max_sharpe convex problem:
         self._constraints = [
-            (self.expected_returns - risk_free_rate).T @ self._w == 1,
-            cp.sum(self._w) == k,
-            k >= 0,
-        ] + new_constraints
+                                (self.expected_returns - risk_free_rate).T @ self._w == 1,
+                                cp.sum(self._w) == k,
+                                k >= 0,
+                            ] + new_constraints
 
         self._solve_cvxpy_opt_problem()
         # Inverse-transform
         self.weights = (self._w.value / k.value).round(16) + 0.0
+        return self._make_output_weights()
+
+    def genetic_max_sharpe(self, risk_free_rate=0.02, n_rounds=100, n_crossovers=100, n_mutations=20,
+                           max_population_size=100):
+        start_time = datetime.now()
+        population = np.random.dirichlet(np.ones(len(self.expected_returns)), max_population_size)
+        for i in range(n_rounds):
+            population = generate_new_population(population=population,
+                                                 expected_returns=self.expected_returns,
+                                                 cov_matrix=self.cov_matrix,
+                                                 risk_free_rate=risk_free_rate,
+                                                 n_crossovers=n_crossovers,
+                                                 n_mutations=n_mutations,
+                                                 max_population_size=max_population_size)
+            print("\nRound: ", i,
+                  "\nPopulation size: ", len(population),
+                  "\nBest solution: ", population[0],
+                  "\nBest solution value: ",
+                  compute_sharpe_ratio(portfolio=population[0],
+                                       expected_returns=self.expected_returns,
+                                       cov_matrix=self.cov_matrix,
+                                       risk_free_rate=risk_free_rate),
+                  "\nStandard deviation: ",
+                  compute_standard_deviation(portfolio=population[0],
+                                             cov_matrix=self.cov_matrix),
+                  "\nPortfolio returns: ",
+                  compute_portfolio_returns(portfolio=population[0],
+                                            expected_returns=self.expected_returns),
+                  "\nTime passed since start: ", datetime.now() - start_time,
+                  "\n")
+
+        self.weights = population[0]
         return self._make_output_weights()
 
     def max_quadratic_utility(self, risk_aversion=1, market_neutral=False):
