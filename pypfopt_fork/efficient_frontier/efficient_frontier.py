@@ -16,6 +16,20 @@ from .. import exceptions
 from .. import objective_functions, base_optimizer
 
 
+def get_default_returns_range(ef, number_of_points):
+    """
+    Helper function to generate a range of returns from the GMV returns to
+    the maximum (constrained) returns
+    """
+    ef_minvol = copy.deepcopy(ef)
+    ef_maxret = copy.deepcopy(ef)
+
+    ef_minvol.min_volatility()
+    min_ret = ef_minvol.portfolio_performance()[0]
+    max_ret = ef_maxret._max_return()
+    return np.linspace(min_ret, max_ret - 0.0001, number_of_points)
+
+
 class EfficientFrontier(base_optimizer.BaseConvexOptimizer):
     """
     An EfficientFrontier object (inheriting from BaseConvexOptimizer) contains multiple
@@ -322,6 +336,40 @@ class EfficientFrontier(base_optimizer.BaseConvexOptimizer):
                   "\n")
 
         self.weights = population[0]
+        return self._make_output_weights()
+
+    def fast_approximate_max_sharpe(self, risk_free_rate=0.02):
+        returns = get_default_returns_range(self, number_of_points=100)
+        ef = copy.deepcopy(self)
+
+        best_portfolio = None
+        best_sharpe_ratio = -np.inf
+
+        # Create a portfolio for each value of ef_param_range
+        for r in returns:
+            try:
+                ef.efficient_return(r)
+            except exceptions.OptimizationError:
+                continue
+            except ValueError:
+                warnings.warn(
+                    "Could not construct portfolio for parameter value {:.3f}".format(r)
+                )
+                raise  # Rethrow original error
+
+            ret, sigma, _ = ef.portfolio_performance()
+            portfolio = ef.weights
+            current_sharpe_ratio = compute_sharpe_ratio(
+                portfolio = portfolio,
+                expected_returns = ef.expected_returns,
+                cov_matrix = ef.cov_matrix,
+                risk_free_rate=risk_free_rate)
+
+            if best_sharpe_ratio < current_sharpe_ratio:
+                best_sharpe_ratio = current_sharpe_ratio
+                best_portfolio = portfolio
+
+        self.weights = best_portfolio
         return self._make_output_weights()
 
     def max_quadratic_utility(self, risk_aversion=1, market_neutral=False):
