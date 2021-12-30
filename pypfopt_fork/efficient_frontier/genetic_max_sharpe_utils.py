@@ -29,10 +29,18 @@ def create_crossover_portfolio(portfolio1, portfolio2):
         (portfolio1[i] if bool(random.getrandbits(1)) else portfolio2[i])
         for i in range(0, len(portfolio1))
     ])
-    return portfolio / sum(portfolio)
+    portfolio_sum = sum(portfolio)
+    return portfolio / portfolio_sum if portfolio_sum != 0 else portfolio1
 
 
-def create_mutated_portfolio(portfolio):
+def create_crossover_portfolio2(portfolio1, portfolio2):
+    ratio = random.uniform(0, 1)
+    result = portfolio1 * ratio + portfolio2 * (1-ratio)
+    return result / sum(result)
+
+
+def create_portfolio_with_swapped_positions(portfolio):
+    """Mutation, which swaps position size on two indexes."""
     result = np.array(portfolio, copy=True)
     # TODO: Figure out how not to create an index array here:
     idx = range(len(portfolio))
@@ -41,23 +49,44 @@ def create_mutated_portfolio(portfolio):
     return result
 
 
+def create_portfolio_with_tweaked_position(portfolio):
+    """Mutation, which adjusts position on a single index up or down,
+    and then scales all others so that sum remains 1."""
+    result = np.array(portfolio, copy=True)
+    idx = range(len(portfolio))
+    result[idx] = random.uniform(0,2)*result[idx]
+    return result / sum(result)
+
+
 def generate_new_population(population, expected_returns, cov_matrix, risk_free_rate, n_crossovers, n_mutations,
                             max_population_size):
     # crossovers:
-    crossovers = np.empty([n_crossovers, len(expected_returns)])
+    # crossovers1 = np.empty([0, len(expected_returns)])
+    crossovers1 = np.empty([n_crossovers, len(expected_returns)])
     for i in range(n_crossovers):
         portfolio1 = population[random.randint(0, len(population) - 1)]
         portfolio2 = population[random.randint(0, len(population) - 1)]
-        crossovers[i] = create_crossover_portfolio(portfolio1, portfolio2)
+        crossovers1[i] = create_crossover_portfolio(portfolio1, portfolio2)
+
+    crossovers2 = np.empty([n_crossovers, len(expected_returns)])
+    for i in range(n_crossovers):
+        portfolio1 = population[random.randint(0, len(population) - 1)]
+        portfolio2 = population[random.randint(0, len(population) - 1)]
+        crossovers2[i] = create_crossover_portfolio2(portfolio1, portfolio2)
 
     # mutations:
-    mutations = np.empty([n_mutations, len(expected_returns)])
+    mutations1 = np.empty([n_mutations, len(expected_returns)])
     for i in range(n_mutations):
         idx = random.randint(0, len(population) - 1)
-        mutations[i] = create_mutated_portfolio(population[idx])
+        mutations1[i] = create_portfolio_with_swapped_positions(population[idx])
+
+    mutations2 = np.empty([n_mutations, len(expected_returns)])
+    for i in range(n_mutations):
+        idx = random.randint(0, len(population) - 1)
+        mutations2[i] = create_portfolio_with_tweaked_position(population[idx])
 
     # Construct new_population from helper variables:
-    new_population = np.concatenate((population, crossovers, mutations), axis=0)
+    new_population = np.concatenate((population, crossovers1, crossovers2, mutations1, mutations2), axis=0)
 
     # Remove duplicates:
     unique_population = np.unique(new_population, axis=0)
@@ -69,3 +98,7 @@ def generate_new_population(population, expected_returns, cov_matrix, risk_free_
 
     # ranking selection:
     return sorted_unique_population[:max_population_size]
+
+
+
+

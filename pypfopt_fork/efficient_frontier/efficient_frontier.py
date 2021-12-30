@@ -4,6 +4,7 @@ classical mean-variance optimal portfolios for a variety of objectives and const
 """
 import copy
 import warnings
+import random
 from datetime import datetime
 
 import numpy as np
@@ -306,10 +307,17 @@ class EfficientFrontier(base_optimizer.BaseConvexOptimizer):
         self.weights = (self._w.value / k.value).round(16) + 0.0
         return self._make_output_weights()
 
-    def genetic_max_sharpe(self, risk_free_rate=0.02, n_rounds=100, n_crossovers=100, n_mutations=20,
-                           max_population_size=100):
+    def genetic_max_sharpe(self, risk_free_rate=0.02, n_rounds=100, n_crossovers=1000, n_mutations=2000,
+                           max_population_size=1000):
+        random.seed(0)
+
         start_time = datetime.now()
-        population = np.random.dirichlet(np.ones(len(self.expected_returns)), max_population_size)
+        population = np.concatenate(
+            (
+                np.random.dirichlet(np.ones(len(self.expected_returns)), max_population_size),
+                np.identity(len(self.expected_returns))
+            ), axis=0)
+
         for i in range(n_rounds):
             population = generate_new_population(population=population,
                                                  expected_returns=self.expected_returns,
