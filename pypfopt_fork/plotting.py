@@ -15,6 +15,8 @@ from . import EfficientFrontier, CLA
 import scipy.cluster.hierarchy as sch
 import warnings
 
+from .efficient_frontier.genetic_max_sharpe_utils import compute_sharpe_ratio
+
 try:
     import matplotlib.pyplot as plt
 
@@ -257,6 +259,80 @@ def plot_efficient_frontier(
     _plot_io(**kwargs)
     return ax
 
+def _plot_sharpe_ef(ef, risk_free_rate, target_return_range, ax):
+    """
+    Helper function to plot the efficient frontier from an EfficientFrontier object
+    """
+    xs, ys = [], []
+
+    # Create a portfolio for each value of ef_param_range
+    for param_value in target_return_range:
+        try:
+            ef.efficient_return(param_value)
+
+        except exceptions.OptimizationError:
+            continue
+        except ValueError:
+            warnings.warn(
+                "Could not construct portfolio for parameter value {:.3f}".format(
+                    param_value
+                )
+            )
+            raise  # Rethrow original error
+
+        ret, sigma, _ = ef.portfolio_performance()
+        portfolio = ef.weights
+        sharpe_ratio = compute_sharpe_ratio(portfolio=portfolio, risk_free_rate=risk_free_rate,
+                                            cov_matrix=ef.cov_matrix, expected_returns=ef.expected_returns)
+        ys.append(sharpe_ratio)
+        xs.append(sigma)
+
+    ax.plot(xs, ys)
+
+    return ax
+
+def plot_sharpe_efficient_portfolios(
+    opt,
+    points=100,
+    ax=None,
+    risk_free_rate=0.02,
+    **kwargs
+):
+    """
+    Plot the efficient frontier based on either a CLA or EfficientFrontier object.
+
+    :param opt: an instantiated optimizer object BEFORE optimising an objective
+    :type opt: EfficientFrontier or CLA
+    :param ef_param: [EfficientFrontier] whether to use a range over utility, risk, or return.
+                     Defaults to "return".
+    :type ef_param: str, one of {"utility", "risk", "return"}.
+    :param ef_param_range: the range of parameter values for ef_param.
+                           If None, automatically compute a range from min->max return.
+    :type ef_param_range: np.array or list (recommended to use np.arange or np.linspace)
+    :param points: number of points to plot, defaults to 100. This is overridden if
+                   an `ef_param_range` is provided explicitly.
+    :type points: int, optional
+    :param show_assets: whether we should plot the asset risks/returns also, defaults to True
+    :type show_assets: bool, optional
+    :param filename: name of the file to save to, defaults to None (doesn't save)
+    :type filename: str, optional
+    :param showfig: whether to plt.show() the figure, defaults to False
+    :type showfig: bool, optional
+    :return: matplotlib axis
+    :rtype: matplotlib.axes object
+    """
+    ax = ax or plt.gca()
+
+    target_return_range = _ef_default_returns_range(opt, points)
+
+    ax = _plot_sharpe_ef(opt, risk_free_rate = risk_free_rate, target_return_range=target_return_range, ax=ax)
+
+    # ax.legend()
+    ax.set_xlabel("Odchylenie standardowe")
+    ax.set_ylabel("Wskaźnik Sharpe'a")
+
+    _plot_io(**kwargs)
+    return ax
 
 def plot_weights(weights, ax=None, **kwargs):
     """
