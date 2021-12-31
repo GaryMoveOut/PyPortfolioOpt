@@ -12,7 +12,7 @@ import pandas as pd
 import cvxpy as cp
 
 from .genetic_max_sharpe_utils import generate_new_population, compute_sharpe_ratio, compute_standard_deviation, \
-    compute_portfolio_returns
+    compute_portfolio_returns, Constraints, Interval, force_portfolio_into_constraints
 from .. import exceptions
 from .. import objective_functions, base_optimizer
 
@@ -307,16 +307,30 @@ class EfficientFrontier(base_optimizer.BaseConvexOptimizer):
         self.weights = (self._w.value / k.value).round(16) + 0.0
         return self._make_output_weights()
 
-    def genetic_max_sharpe(self, risk_free_rate=0.02, n_rounds=100, n_crossovers=1000, n_mutations=2000,
-                           max_population_size=1000):
+    def genetic_max_sharpe(
+            self,
+            risk_free_rate=0.02,
+            n_rounds=100,
+            n_crossovers=1000,
+            n_mutations=2000,
+            max_population_size=1000,
+            constraints: Constraints = Constraints(
+                allowed_allocation_per_index=Interval(min=0, max=1),
+                allowed_number_of_indexes=Interval(min=0, max=np.inf)
+            )
+    ):
         random.seed(0)
 
         start_time = datetime.now()
-        population = np.concatenate(
-            (
-                np.random.dirichlet(np.ones(len(self.expected_returns)), max_population_size),
-                np.identity(len(self.expected_returns))
-            ), axis=0)
+
+        unconstrained_population = np.concatenate((
+            np.random.dirichlet(np.ones(len(self.expected_returns)), max_population_size),
+            np.identity(len(self.expected_returns))
+        ), axis=0)
+        population = np.array([
+            force_portfolio_into_constraints(portfolio=p, constraints=constraints)
+            for p in unconstrained_population
+        ])
 
         for i in range(n_rounds):
             population = generate_new_population(population=population,
@@ -325,10 +339,12 @@ class EfficientFrontier(base_optimizer.BaseConvexOptimizer):
                                                  risk_free_rate=risk_free_rate,
                                                  n_crossovers=n_crossovers,
                                                  n_mutations=n_mutations,
-                                                 max_population_size=max_population_size)
+                                                 max_population_size=max_population_size,
+                                                 constraints=constraints)
             print("\nRound: ", i,
                   "\nPopulation size: ", len(population),
                   "\nBest solution: ", population[0],
+                  "\nBest solution pretty print: ", np.around(population[0], decimals=3),
                   "\nBest solution value: ",
                   compute_sharpe_ratio(portfolio=population[0],
                                        expected_returns=self.expected_returns,

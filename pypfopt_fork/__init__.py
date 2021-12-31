@@ -10,6 +10,9 @@ from .efficient_frontier import (
     EfficientSemivariance,
     EfficientCVaR,
     EfficientCDaR,
+    Constraints,
+    Interval,
+    force_portfolio_into_constraints,
 )
 from .hierarchical_portfolio import HRPOpt
 from .risk_models import CovarianceShrinkage
@@ -28,6 +31,9 @@ __all__ = [
     "EfficientSemivariance",
     "EfficientCVaR",
     "EfficientCDaR",
+    "Constraints",
+    "Interval",
+    "force_portfolio_into_constraints",  # TODO: Remove this export, after all manual testing is done
     "HRPOpt",
     "CovarianceShrinkage",
 ]
