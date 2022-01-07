@@ -15,6 +15,9 @@ from .efficient_frontier import (
     SingleRoundParams,
     GeneticAlgorithmParams,
     force_portfolio_into_constraints,
+    compute_standard_deviation,
+    compute_portfolio_returns,
+    compute_sharpe_ratio,
 )
 from .hierarchical_portfolio import HRPOpt
 from .risk_models import CovarianceShrinkage
@@ -37,6 +40,9 @@ __all__ = [
     "Interval",
     "SingleRoundParams",
     "GeneticAlgorithmParams",
+    "compute_standard_deviation",
+    "compute_portfolio_returns",
+    "compute_sharpe_ratio",
     "force_portfolio_into_constraints",  # TODO: Remove this export, after all manual testing is done
     "HRPOpt",
     "CovarianceShrinkage",

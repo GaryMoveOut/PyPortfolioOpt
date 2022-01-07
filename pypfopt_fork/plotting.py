@@ -15,7 +15,7 @@ from . import EfficientFrontier, CLA
 import scipy.cluster.hierarchy as sch
 import warnings
 
-from .efficient_frontier.genetic_max_sharpe_utils import compute_sharpe_ratio
+from .efficient_frontier.genetic_algorithm_utils import compute_sharpe_ratio
 
 try:
     import matplotlib.pyplot as plt

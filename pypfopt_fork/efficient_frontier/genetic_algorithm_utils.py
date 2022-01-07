@@ -1,5 +1,6 @@
 import copy
 import random
+from typing import NewType, Callable
 
 import numpy as np
 from dataclasses import dataclass
@@ -59,7 +60,54 @@ class GeneticAlgorithmParams:
     single_round_params: SingleRoundParams
 
 
+###############################################################################
+# Target functions:
+###############################################################################
 
+Portfolio = np.array
+ExpectedReturns = np.array
+CovMatrix = np.array
+RiskFreeRate = float
+
+TargetFunction = NewType('TargetFunction',
+                         Callable[
+                             [Portfolio, ExpectedReturns, CovMatrix, RiskFreeRate],
+                             float
+                         ])
+
+
+def compute_standard_deviation(portfolio, expected_returns, cov_matrix, risk_free_rate):
+    variance = 0
+    for i in range(0, len(portfolio)):
+        for j in range(0, len(portfolio)):
+            variance += portfolio[i] * portfolio[j] * cov_matrix[i][j]
+    return variance ** 0.5
+
+
+def compute_portfolio_returns(portfolio, expected_returns, cov_matrix, risk_free_rate):
+    result = 0
+    for i in range(0, len(portfolio)):
+        result += expected_returns[i] * portfolio[i]
+    return result
+
+
+def compute_sharpe_ratio(portfolio, expected_returns, cov_matrix, risk_free_rate):
+    standard_deviation = compute_standard_deviation(
+        portfolio=portfolio,
+        expected_returns=expected_returns,
+        cov_matrix=cov_matrix,
+        risk_free_rate=risk_free_rate)
+    returns = compute_portfolio_returns(
+        portfolio=portfolio,
+        expected_returns=expected_returns,
+        cov_matrix=cov_matrix,
+        risk_free_rate=risk_free_rate)
+    return (returns - risk_free_rate) / standard_deviation
+
+
+###############################################################################
+# Crossovers and mutations:
+###############################################################################
 
 def force_portfolio_into_constraints(portfolio, constraints: Constraints, recursion_level=0):
     if recursion_level > 1000:
@@ -180,27 +228,6 @@ def force_portfolio_into_constraints(portfolio, constraints: Constraints, recurs
     return result
 
 
-def compute_standard_deviation(portfolio, cov_matrix):
-    variance = 0
-    for i in range(0, len(portfolio)):
-        for j in range(0, len(portfolio)):
-            variance += portfolio[i] * portfolio[j] * cov_matrix[i][j]
-    return variance ** 0.5
-
-
-def compute_portfolio_returns(portfolio, expected_returns):
-    result = 0
-    for i in range(0, len(portfolio)):
-        result += expected_returns[i] * portfolio[i]
-    return result
-
-
-def compute_sharpe_ratio(portfolio, expected_returns, cov_matrix, risk_free_rate):
-    standard_deviation = compute_standard_deviation(portfolio, cov_matrix)
-    returns = compute_portfolio_returns(portfolio, expected_returns)
-    return (returns - risk_free_rate) / standard_deviation
-
-
 def create_crossover_portfolio(portfolio1, portfolio2, constraints: Constraints):
     portfolio = np.array([
         (portfolio1[i] if bool(random.getrandbits(1)) else portfolio2[i])
@@ -242,6 +269,7 @@ def create_portfolio_with_tweaked_position(portfolio, constraints: Constraints):
 
 def generate_new_population(
         population,
+        target_function: TargetFunction,
         expected_returns,
         cov_matrix,
         risk_free_rate,
@@ -280,7 +308,7 @@ def generate_new_population(
 
     # sort and selection of the best solutions:
     pairs = list(
-        map(lambda p: [compute_sharpe_ratio(p, expected_returns, cov_matrix, risk_free_rate), p], unique_population))
+        map(lambda p: [target_function(p, expected_returns, cov_matrix, risk_free_rate), p], unique_population))
     pairs.sort(key=lambda p: p[0], reverse=True)
     sorted_unique_population = list(map(lambda p: p[1], pairs))
 

@@ -11,8 +11,9 @@ import numpy as np
 import pandas as pd
 import cvxpy as cp
 
-from .genetic_max_sharpe_utils import generate_new_population, compute_sharpe_ratio, compute_standard_deviation, \
-    compute_portfolio_returns, Constraints, Interval, force_portfolio_into_constraints, GeneticAlgorithmParams
+from .genetic_algorithm_utils import generate_new_population, compute_sharpe_ratio, \
+    Constraints, Interval, force_portfolio_into_constraints, GeneticAlgorithmParams, \
+    TargetFunction
 from .. import exceptions
 from .. import objective_functions, base_optimizer
 
@@ -307,9 +308,10 @@ class EfficientFrontier(base_optimizer.BaseConvexOptimizer):
         self.weights = (self._w.value / k.value).round(16) + 0.0
         return self._make_output_weights()
 
-    def genetic_max_sharpe(
+    def genetic_max_target_function(
             self,
             genetic_algorithm_params: GeneticAlgorithmParams,
+            target_function: TargetFunction,
             risk_free_rate=0.02,
             constraints: Constraints = Constraints(
                 allowed_allocation_per_index=Interval(min=0, max=1),
@@ -341,13 +343,14 @@ class EfficientFrontier(base_optimizer.BaseConvexOptimizer):
                 i += 1
 
                 population = generate_new_population(population=population,
+                                                     target_function=target_function,
                                                      expected_returns=self.expected_returns,
                                                      cov_matrix=self.cov_matrix,
                                                      risk_free_rate=risk_free_rate,
                                                      single_round_params=genetic_algorithm_params.single_round_params,
                                                      constraints=constraints)
 
-                best_portfolio_value = compute_sharpe_ratio(
+                best_portfolio_value = target_function(
                     portfolio=population[0],
                     expected_returns=self.expected_returns,
                     cov_matrix=self.cov_matrix,
@@ -359,12 +362,6 @@ class EfficientFrontier(base_optimizer.BaseConvexOptimizer):
                       "\nBest solution: ", population[0],
                       "\nBest solution pretty print: ", np.around(population[0], decimals=4),
                       "\nBest solution value: ", best_portfolio_value,
-                      "\nStandard deviation: ",
-                      compute_standard_deviation(portfolio=population[0],
-                                                 cov_matrix=self.cov_matrix),
-                      "\nPortfolio returns: ",
-                      compute_portfolio_returns(portfolio=population[0],
-                                                expected_returns=self.expected_returns),
                       "\nTime passed since start: ", datetime.now() - start_time,
                       "\n")
 
