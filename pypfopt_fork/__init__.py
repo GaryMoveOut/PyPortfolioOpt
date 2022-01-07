@@ -12,6 +12,8 @@ from .efficient_frontier import (
     EfficientCDaR,
     Constraints,
     Interval,
+    SingleRoundParams,
+    GeneticAlgorithmParams,
     force_portfolio_into_constraints,
 )
 from .hierarchical_portfolio import HRPOpt
@@ -33,6 +35,8 @@ __all__ = [
     "EfficientCDaR",
     "Constraints",
     "Interval",
+    "SingleRoundParams",
+    "GeneticAlgorithmParams",
     "force_portfolio_into_constraints",  # TODO: Remove this export, after all manual testing is done
     "HRPOpt",
     "CovarianceShrinkage",

@@ -35,6 +35,32 @@ class Constraints:
         assert max_total_allocation >= 1
 
 
+@dataclass
+class SingleRoundParams:
+    n_crossovers1: int
+    n_crossovers2: int
+    n_mutations1: int
+    n_mutations2: int
+    max_population_size: int
+
+
+@dataclass
+class GeneticAlgorithmParams:
+    seed: int
+    # How many times the algorithm should start from scratch (from random portfolios):
+    n_runs: int
+
+    # See min_improvement_threshold comment
+    n_rounds: int
+
+    # The algorithm will stop when it fails to improve by more than min_improvement_threshold, over n_rounds
+    min_improvement_threshold: float
+
+    single_round_params: SingleRoundParams
+
+
+
+
 def force_portfolio_into_constraints(portfolio, constraints: Constraints, recursion_level=0):
     if recursion_level > 1000:
         raise Exception('Recursion too deep, possibly infinite')
@@ -219,32 +245,30 @@ def generate_new_population(
         expected_returns,
         cov_matrix,
         risk_free_rate,
-        n_crossovers,
-        n_mutations,
-        max_population_size,
+        single_round_params: SingleRoundParams,
         constraints: Constraints):
     # crossovers:
     # crossovers1 = np.empty([0, len(expected_returns)])
-    crossovers1 = np.empty([n_crossovers, len(expected_returns)])
-    for i in range(n_crossovers):
+    crossovers1 = np.empty([single_round_params.n_crossovers1, len(expected_returns)])
+    for i in range(single_round_params.n_crossovers1):
         portfolio1 = population[random.randint(0, len(population) - 1)]
         portfolio2 = population[random.randint(0, len(population) - 1)]
         crossovers1[i] = create_crossover_portfolio(portfolio1, portfolio2, constraints)
 
-    crossovers2 = np.empty([n_crossovers, len(expected_returns)])
-    for i in range(n_crossovers):
+    crossovers2 = np.empty([single_round_params.n_crossovers2, len(expected_returns)])
+    for i in range(single_round_params.n_crossovers2):
         portfolio1 = population[random.randint(0, len(population) - 1)]
         portfolio2 = population[random.randint(0, len(population) - 1)]
         crossovers2[i] = create_crossover_portfolio2(portfolio1, portfolio2, constraints)
 
     # mutations:
-    mutations1 = np.empty([n_mutations, len(expected_returns)])
-    for i in range(n_mutations):
+    mutations1 = np.empty([single_round_params.n_mutations1, len(expected_returns)])
+    for i in range(single_round_params.n_mutations1):
         idx = random.randint(0, len(population) - 1)
         mutations1[i] = create_portfolio_with_swapped_positions(population[idx], constraints)
 
-    mutations2 = np.empty([n_mutations, len(expected_returns)])
-    for i in range(n_mutations):
+    mutations2 = np.empty([single_round_params.n_mutations2, len(expected_returns)])
+    for i in range(single_round_params.n_mutations2):
         idx = random.randint(0, len(population) - 1)
         mutations2[i] = create_portfolio_with_tweaked_position(population[idx], constraints)
 
@@ -261,4 +285,4 @@ def generate_new_population(
     sorted_unique_population = list(map(lambda p: p[1], pairs))
 
     # ranking selection:
-    return sorted_unique_population[:max_population_size]
+    return sorted_unique_population[:single_round_params.max_population_size]

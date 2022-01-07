@@ -12,7 +12,7 @@ import pandas as pd
 import cvxpy as cp
 
 from .genetic_max_sharpe_utils import generate_new_population, compute_sharpe_ratio, compute_standard_deviation, \
-    compute_portfolio_returns, Constraints, Interval, force_portfolio_into_constraints
+    compute_portfolio_returns, Constraints, Interval, force_portfolio_into_constraints, GeneticAlgorithmParams
 from .. import exceptions
 from .. import objective_functions, base_optimizer
 
@@ -309,61 +309,87 @@ class EfficientFrontier(base_optimizer.BaseConvexOptimizer):
 
     def genetic_max_sharpe(
             self,
+            genetic_algorithm_params: GeneticAlgorithmParams,
             risk_free_rate=0.02,
-            n_rounds=100,
-            n_crossovers=1000,
-            n_mutations=2000,
-            max_population_size=1000,
             constraints: Constraints = Constraints(
                 allowed_allocation_per_index=Interval(min=0, max=1),
                 allowed_number_of_indexes=Interval(min=0, max=np.inf)
             )
     ):
-        random.seed(0)
+        random.seed(genetic_algorithm_params.seed)
 
         start_time = datetime.now()
+        global_best_portfolio = None
+        global_best_portfolio_value = -np.Inf
 
-        unconstrained_population = np.concatenate((
-            np.random.dirichlet(np.ones(len(self.expected_returns)), max_population_size),
-            np.identity(len(self.expected_returns))
-        ), axis=0)
-        population = np.array([
-            force_portfolio_into_constraints(portfolio=p, constraints=constraints)
-            for p in unconstrained_population
-        ])
+        for run in range(0, genetic_algorithm_params.n_runs):
+            best_portfolio_values = []
 
-        for i in range(n_rounds):
-            population = generate_new_population(population=population,
-                                                 expected_returns=self.expected_returns,
-                                                 cov_matrix=self.cov_matrix,
-                                                 risk_free_rate=risk_free_rate,
-                                                 n_crossovers=n_crossovers,
-                                                 n_mutations=n_mutations,
-                                                 max_population_size=max_population_size,
-                                                 constraints=constraints)
-            print("\nRound: ", i,
-                  "\nPopulation size: ", len(population),
-                  "\nBest solution: ", population[0],
-                  "\nBest solution pretty print: ", np.around(population[0], decimals=3),
-                  "\nBest solution value: ",
-                  compute_sharpe_ratio(portfolio=population[0],
-                                       expected_returns=self.expected_returns,
-                                       cov_matrix=self.cov_matrix,
-                                       risk_free_rate=risk_free_rate),
-                  "\nStandard deviation: ",
-                  compute_standard_deviation(portfolio=population[0],
-                                             cov_matrix=self.cov_matrix),
-                  "\nPortfolio returns: ",
-                  compute_portfolio_returns(portfolio=population[0],
-                                            expected_returns=self.expected_returns),
-                  "\nTime passed since start: ", datetime.now() - start_time,
+            unconstrained_population = np.concatenate((
+                np.random.dirichlet(
+                    np.ones(len(self.expected_returns)),
+                    genetic_algorithm_params.single_round_params.max_population_size),
+                np.identity(len(self.expected_returns))
+            ), axis=0)
+            population = np.array([
+                force_portfolio_into_constraints(portfolio=p, constraints=constraints)
+                for p in unconstrained_population
+            ])
+
+            i = 0
+            while True:
+                i += 1
+
+                population = generate_new_population(population=population,
+                                                     expected_returns=self.expected_returns,
+                                                     cov_matrix=self.cov_matrix,
+                                                     risk_free_rate=risk_free_rate,
+                                                     single_round_params=genetic_algorithm_params.single_round_params,
+                                                     constraints=constraints)
+
+                best_portfolio_value = compute_sharpe_ratio(
+                    portfolio=population[0],
+                    expected_returns=self.expected_returns,
+                    cov_matrix=self.cov_matrix,
+                    risk_free_rate=risk_free_rate)
+                best_portfolio_values.append(best_portfolio_value)
+
+                print("\nRound ", i, " of run ", run, ':',
+                      "\nPopulation size: ", len(population),
+                      "\nBest solution: ", population[0],
+                      "\nBest solution pretty print: ", np.around(population[0], decimals=4),
+                      "\nBest solution value: ", best_portfolio_value,
+                      "\nStandard deviation: ",
+                      compute_standard_deviation(portfolio=population[0],
+                                                 cov_matrix=self.cov_matrix),
+                      "\nPortfolio returns: ",
+                      compute_portfolio_returns(portfolio=population[0],
+                                                expected_returns=self.expected_returns),
+                      "\nTime passed since start: ", datetime.now() - start_time,
+                      "\n")
+
+                if i < genetic_algorithm_params.n_rounds:
+                    continue
+
+                old_best = best_portfolio_values[i - genetic_algorithm_params.n_rounds]
+                if best_portfolio_value - old_best < genetic_algorithm_params.min_improvement_threshold:
+                    break
+
+            if global_best_portfolio_value < best_portfolio_values[-1]:
+                global_best_portfolio_value = best_portfolio_values[-1]
+                global_best_portfolio = population[0]
+
+            print("\nRun ", run, " finished",
+                  "\nGlobal best solution value: ", global_best_portfolio_value,
+                  "\nGlobal best solution: ", global_best_portfolio,
+                  "\nGlobal best solution pretty print: ", np.around(global_best_portfolio, decimals=4),
                   "\n")
 
-        self.weights = population[0]
+        self.weights = global_best_portfolio
         return self._make_output_weights()
 
-    def fast_approximate_max_sharpe(self, risk_free_rate=0.02):
-        returns = get_default_returns_range(self, number_of_points=100)
+    def fast_approximate_max_sharpe(self, risk_free_rate=0.02, number_of_points=10000):
+        returns = get_default_returns_range(self, number_of_points=number_of_points)
         ef = copy.deepcopy(self)
 
         best_portfolio = None
@@ -384,9 +410,9 @@ class EfficientFrontier(base_optimizer.BaseConvexOptimizer):
             ret, sigma, _ = ef.portfolio_performance()
             portfolio = ef.weights
             current_sharpe_ratio = compute_sharpe_ratio(
-                portfolio = portfolio,
-                expected_returns = ef.expected_returns,
-                cov_matrix = ef.cov_matrix,
+                portfolio=portfolio,
+                expected_returns=ef.expected_returns,
+                cov_matrix=ef.cov_matrix,
                 risk_free_rate=risk_free_rate)
 
             if best_sharpe_ratio < current_sharpe_ratio:
