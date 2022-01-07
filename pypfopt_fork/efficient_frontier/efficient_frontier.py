@@ -308,21 +308,25 @@ class EfficientFrontier(base_optimizer.BaseConvexOptimizer):
         self.weights = (self._w.value / k.value).round(16) + 0.0
         return self._make_output_weights()
 
-    def genetic_max_target_function(
+    def optimize_target_function(
             self,
             genetic_algorithm_params: GeneticAlgorithmParams,
             target_function: TargetFunction,
+            min_or_max,
             risk_free_rate=0.02,
             constraints: Constraints = Constraints(
                 allowed_allocation_per_index=Interval(min=0, max=1),
                 allowed_number_of_indexes=Interval(min=0, max=np.inf)
             )
     ):
+        # TODO: After switching to Python 3.8, use Literal['min', 'max'] to express this type constraint:
+        assert min_or_max == 'min' or min_or_max == 'max'
+
         random.seed(genetic_algorithm_params.seed)
 
         start_time = datetime.now()
         global_best_portfolio = None
-        global_best_portfolio_value = -np.Inf
+        global_best_portfolio_value = np.Inf if min_or_max == 'min' else -np.Inf
 
         for run in range(0, genetic_algorithm_params.n_runs):
             best_portfolio_values = []
@@ -344,6 +348,7 @@ class EfficientFrontier(base_optimizer.BaseConvexOptimizer):
 
                 population = generate_new_population(population=population,
                                                      target_function=target_function,
+                                                     min_or_max=min_or_max,
                                                      expected_returns=self.expected_returns,
                                                      cov_matrix=self.cov_matrix,
                                                      risk_free_rate=risk_free_rate,
@@ -360,7 +365,6 @@ class EfficientFrontier(base_optimizer.BaseConvexOptimizer):
                 print("\nRound ", i, " of run ", run, ':',
                       "\nPopulation size: ", len(population),
                       "\nBest solution: ", population[0],
-                      "\nBest solution pretty print: ", np.around(population[0], decimals=4),
                       "\nBest solution value: ", best_portfolio_value,
                       "\nTime passed since start: ", datetime.now() - start_time,
                       "\n")
@@ -369,17 +373,17 @@ class EfficientFrontier(base_optimizer.BaseConvexOptimizer):
                     continue
 
                 old_best = best_portfolio_values[i - genetic_algorithm_params.n_rounds]
-                if best_portfolio_value - old_best < genetic_algorithm_params.min_improvement_threshold:
+                if abs(best_portfolio_value - old_best) < genetic_algorithm_params.min_improvement_threshold:
                     break
 
-            if global_best_portfolio_value < best_portfolio_values[-1]:
+            if ((min_or_max == 'max' and global_best_portfolio_value < best_portfolio_values[-1]) or
+                    (min_or_max == 'min' and global_best_portfolio_value > best_portfolio_values[-1])):
                 global_best_portfolio_value = best_portfolio_values[-1]
                 global_best_portfolio = population[0]
 
             print("\nRun ", run, " finished",
                   "\nGlobal best solution value: ", global_best_portfolio_value,
                   "\nGlobal best solution: ", global_best_portfolio,
-                  "\nGlobal best solution pretty print: ", np.around(global_best_portfolio, decimals=4),
                   "\n")
 
         self.weights = global_best_portfolio

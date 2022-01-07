@@ -270,11 +270,15 @@ def create_portfolio_with_tweaked_position(portfolio, constraints: Constraints):
 def generate_new_population(
         population,
         target_function: TargetFunction,
+        min_or_max,
         expected_returns,
         cov_matrix,
         risk_free_rate,
         single_round_params: SingleRoundParams,
         constraints: Constraints):
+    # TODO: After switching to Python 3.8, use Literal['min', 'max'] to express this type constraint:
+    assert min_or_max == 'min' or min_or_max == 'max'
+
     # crossovers:
     # crossovers1 = np.empty([0, len(expected_returns)])
     crossovers1 = np.empty([single_round_params.n_crossovers1, len(expected_returns)])
@@ -309,7 +313,7 @@ def generate_new_population(
     # sort and selection of the best solutions:
     pairs = list(
         map(lambda p: [target_function(p, expected_returns, cov_matrix, risk_free_rate), p], unique_population))
-    pairs.sort(key=lambda p: p[0], reverse=True)
+    pairs.sort(key=lambda p: p[0], reverse=(min_or_max == 'max'))
     sorted_unique_population = list(map(lambda p: p[1], pairs))
 
     # ranking selection:
