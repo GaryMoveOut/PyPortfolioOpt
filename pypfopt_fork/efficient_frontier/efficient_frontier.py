@@ -362,12 +362,13 @@ class EfficientFrontier(base_optimizer.BaseConvexOptimizer):
                     risk_free_rate=risk_free_rate)
                 best_portfolio_values.append(best_portfolio_value)
 
-                print("\nRound ", i, " of run ", run, ':',
-                      "\nPopulation size: ", len(population),
-                      "\nBest solution: ", population[0],
-                      "\nBest solution value: ", best_portfolio_value,
-                      "\nTime passed since start: ", datetime.now() - start_time,
-                      "\n")
+                if genetic_algorithm_params.show_logs:
+                    print("\nRound ", i, " of run ", run, ':',
+                          "\nPopulation size: ", len(population),
+                          "\nBest solution: ", population[0],
+                          "\nBest solution value: ", best_portfolio_value,
+                          "\nTime passed since start: ", datetime.now() - start_time,
+                          "\n")
 
                 if i < genetic_algorithm_params.n_rounds:
                     continue
@@ -381,10 +382,11 @@ class EfficientFrontier(base_optimizer.BaseConvexOptimizer):
                 global_best_portfolio_value = best_portfolio_values[-1]
                 global_best_portfolio = population[0]
 
-            print("\nRun ", run, " finished",
-                  "\nGlobal best solution value: ", global_best_portfolio_value,
-                  "\nGlobal best solution: ", global_best_portfolio,
-                  "\n")
+            if genetic_algorithm_params.show_logs:
+                print("\nRun ", run, " finished",
+                      "\nGlobal best solution value: ", global_best_portfolio_value,
+                      "\nGlobal best solution: ", global_best_portfolio,
+                      "\n")
 
         self.weights = global_best_portfolio
         return self._make_output_weights()

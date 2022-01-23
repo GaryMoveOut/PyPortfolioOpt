@@ -59,6 +59,7 @@ class GeneticAlgorithmParams:
 
     single_round_params: SingleRoundParams
 
+    show_logs: bool
 
 ###############################################################################
 # Target functions:
